@@ -27,6 +27,27 @@ describe Cedis do
     end
 
     describe "#transaction and #abort" do
+      it "can complete a #transaction" do
+        store = init_tests
+        store.set "name", "bob"
+        store.set "age", "12"
+        store.transaction do
+          store.set "name", "alice"
+          store.del "age"
+        end
+        store.get("name").should eq "alice"
+        expect_raises(KeyError) { store.get "age" }
+      end
+
+      it "rolls back transaction if it did not complete successfully" do
+        store = init_tests
+        store.set "name", "bob"
+        store.transaction do
+          store.set "name", "alice"
+          store.get "age"
+        end
+        store.get("name").should eq "bob"
+      end
     end
   end
 end
