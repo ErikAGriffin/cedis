@@ -1,0 +1,9 @@
+name: cedis
+version: 0.1.0
+
+authors:
+  - Erik Griffin <griffin.erik@gmail.com>
+
+crystal: 0.34.0
+
+license: MIT
