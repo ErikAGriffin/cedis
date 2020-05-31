@@ -14,6 +14,33 @@
 #   and the operations in a transaction only complete
 #   if every operation succeed.
 # - Must also support nested transactions.
+# ...
+# If get throws an error while in a transaction, actually
+# it needs to look in the transaction above it if there
+# is a value there.
+# store.set "name", "alice"
+# store.transaction do
+#   store.set "test", store.get("name")
+# end
+# store.get "test" # => "alice"
+# This needs to continue all the way up the transaction tree
+# until it can be certain there is no actual value for that
+# key.
+#
+# Further more getting a DeleteKey should throw an error
+# that aborts the transaction
+# store.set "name", "alice"
+# store.transaction do
+#   store.del "name"
+#   store.set "test", store.get("name") # => throws error
+# end
+# store.get "name" # => "alice"
+#
+# And finally, if I wanted to build this more suited for a REPL,
+# I think I could handle the throwing of errors in each individual
+# method.  So that #get itself would hop out of the transaction
+# in case of KeyError.  #begin would just add to the transactions
+# stack and #abort would pop it off.
 module Cedis
   VERSION = "0.1.0"
 
