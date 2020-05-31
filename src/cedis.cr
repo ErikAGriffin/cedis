@@ -6,7 +6,7 @@
 # This was initially given to me as a coding challenge
 # at a job interview. The requirements:
 #
-# - Must be able to set, get, and del keys.
+# - Must be able to set, get, and delete keys.
 # - Attempting to get a key which does not exist raises an error
 # - Must be able to support transactions.
 # - Transactions start with a #begin statement,
@@ -14,24 +14,13 @@
 #   and the operations in a transaction only complete
 #   if every operation succeed.
 # - Must also support nested transactions.
-#
-#
-# cedis.set "name", "bob"
-# cedis.get "name" # => "bob"
-# cedis.transaction do
-#   cedis.set "name", "alice"
-#   cedis.set "age", cedis.get("name")
-#   cedis.get "age" # => alice
-#   cedis.get "fail" # => raises error
-#   cedis.set ...
-# end
-# cedis.get "name" # => "bob
-#
 module Cedis
   VERSION = "0.1.0"
 
   class Store
     struct DeleteKey
+    end
+    class TransactionAborted < Exception
     end
 
     @store = Hash(String, String).new
@@ -62,10 +51,20 @@ module Cedis
       yield
       merge_transactions(@transactions.pop)
     rescue e : KeyError
+      puts e.message
+      @transactions.pop
+    rescue e : Exception
+      puts "An error has occurred: #{e.message}"
       @transactions.pop
     end
 
-    private def merge_transactions(trans_store : Hash(String, DeleteKey))
+    def abort_transaction
+      unless @transactions.empty?
+        raise TransactionAborted.new "Transaction Aborted"
+      end
+    end
+
+    private def merge_transactions(trans_store : Hash(String, String | DeleteKey))
       trans_store.each do |k, v|
         if v.is_a? DeleteKey
           store.delete k

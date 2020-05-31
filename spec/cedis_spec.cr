@@ -26,7 +26,7 @@ describe Cedis do
       end
     end
 
-    describe "#transaction and #abort" do
+    describe "#transaction and #abort_transaction" do
       it "can complete a #transaction" do
         store = init_tests
         store.set "name", "bob"
@@ -47,6 +47,41 @@ describe Cedis do
           store.get "age"
         end
         store.get("name").should eq "bob"
+      end
+
+      it "can #abort a transaction" do
+        store = init_tests
+        store.set "name", "bob"
+        store.transaction do
+          store.set "name", "alice"
+          store.abort_transaction
+        end
+        store.get("name").should eq "bob"
+      end
+
+      it "supports nested transactions" do
+        store = init_tests
+        store.set "name", "bob"
+        store.transaction do
+          store.set "name", "alice"
+          store.set "age", "12"
+          store.transaction do
+            store.set "pizza", "yes"
+            store.set "age", "13"
+            store.transaction do
+              store.del "name"
+              store.set "pizza", "no"
+            end
+            store.get "fail"
+          end
+          store.transaction do
+            store.set "sushi", "yes"
+          end
+        end
+        store.get("name").should eq "alice"
+        store.get("age").should eq "12"
+        store.get("sushi").should eq "yes"
+        expect_raises(KeyError) { store.get "pizza" }
       end
     end
   end
